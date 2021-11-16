@@ -14,7 +14,7 @@ public class HeaderPacket extends Packet{
         fileName = new String(byteName);
     }
 
-    public String getFileName(HeaderPacket packet){
-        return packet.fileName;
+    public String getFileName(){
+        return this.fileName;
     }
 }

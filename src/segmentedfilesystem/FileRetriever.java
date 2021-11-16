@@ -13,6 +13,9 @@ public class FileRetriever {
         private static int portNum;
         DatagramPacket packet;
         DatagramSocket socket = null;
+        private static byte[] buf;
+        private DataPacket dataPacket;
+        static byte[] lastPackNum;
 
 
 	public FileRetriever(String server, int port) {
@@ -30,8 +33,9 @@ public class FileRetriever {
 
                 try {
                         socket = new DatagramSocket();
+                        socket.connect(serverName, portNum);
 
-                        byte[] buf = new byte[1028];
+                        buf = new byte[1028];
                         packet = new DatagramPacket(buf, buf.length, serverName, portNum);
                         socket.send(packet);
                 } catch(SocketException e) {
@@ -40,7 +44,28 @@ public class FileRetriever {
                         System.out.println("IOException error.");
                 }
 
-                while()
+                while(!ReceivedFile.allPacketsReceived()) {
+                        try{ 
+                                socket.receive(packet);
+                                ReceivedFile.packetsReceived++;
+                        } catch(IOException e){
+                                System.out.println("There was an unexpected error.");
+                        }
+                        Packet packetType = new Packet(packet);
+                        if(packetType.isHeader()) {
+                                HeaderPacket headerPacket = new HeaderPacket(packet);
+                                ReceivedFile.files.put(headerPacket.fileID, headerPacket);
+                        }
+                        else {
+                                dataPacket = new DataPacket(packet);
+                                ReceivedFile.files.put(dataPacket.fileID, dataPacket);
+                        }
+                        if(dataPacket.isLastPacket()){
+                                lastPackNum = dataPacket.packetNum;
+                        }
+                        packet = new DatagramPacket(buf, buf.length, serverName, portNum);
+                        
+                }
 
 
         // Do all the heavy lifting here.
