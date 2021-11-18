@@ -4,6 +4,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
 import java.io.IOException;
 import java.net.DatagramPacket;
 
@@ -16,6 +19,9 @@ public class FileRetriever {
         private static byte[] buf;
         private DataPacket dataPacket;
         static byte[] lastPackNum;
+        public List<ReceivedFile> allPackets = new ArrayList<>();
+        HeaderPacket head;
+        DataPacket data;
 
 
 	public FileRetriever(String server, int port) {
@@ -47,24 +53,45 @@ public class FileRetriever {
                 while(!ReceivedFile.allPacketsReceived()) {
                         try{ 
                                 socket.receive(packet);
-                                ReceivedFile.packetsReceived++;
                         } catch(IOException e){
                                 System.out.println("There was an unexpected error.");
                         }
                         Packet packetType = new Packet(packet);
-                        if(packetType.isHeader()) {
-                                HeaderPacket headerPacket = new HeaderPacket(packet);
-                                ReceivedFile.files.put(headerPacket.fileID, headerPacket);
+
+                        boolean isHead = packetType.isHeader();
+
+                        if(isHead) {
+                                head = new HeaderPacket(packet);
+                        } else {
+                                data = new DataPacket(packet);
                         }
-                        else {
-                                dataPacket = new DataPacket(packet);
-                                ReceivedFile.files.put(dataPacket.fileID, dataPacket);
-                        }
+
+                        for(ReceivedFile received : allPackets) {
+
+                                if(received.files.containsValue(packetType.fileID)) {
+
+                                        if(isHead) {
+                                                received.addPacket(head);
+                                        } else {
+                                                received.addPacket(data);
+                                        }
+                                } else {
+                                        ReceivedFile newMap = new ReceivedFile();
+
+                                        if(isHead) {
+                                                newMap.addPacket(head);
+                                        } else {
+                                                newMap.addPacket(data);
+                                        }
+                                        allPackets.add(newMap);
+
+                                }
+                                received.packetsReceived++;
+
                         if(dataPacket.isLastPacket()){
                                 lastPackNum = dataPacket.packetNum;
                         }
-                        packet = new DatagramPacket(buf, buf.length, serverName, portNum);
-                        
+                        packet = new DatagramPacket(buf, buf.length);
                 }
 
 

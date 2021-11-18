@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 public class Packet{
 
     public int statusByte;
+    public int packetNumber;
     public int fileID;
     byte[] data;
     

@@ -9,6 +9,7 @@ public class HeaderPacket extends Packet{
 
     public HeaderPacket(DatagramPacket packet){
         super(packet);
+        packetNumber = -1;
         int nameLength = packet.getLength();
         byte[] byteName = Arrays.copyOfRange(data, 2, 2 + nameLength);
         fileName = new String(byteName);
