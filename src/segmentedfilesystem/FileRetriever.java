@@ -93,6 +93,9 @@ public class FileRetriever {
                                                 received.addPacket(head);
                                         } else {
                                                 received.addPacket(data);
+                                                if(data.packetNumber > received.maxPackets) {
+                                                        received.maxPackets = data.packetNumber;
+                                                }
                                         }
                                         IDFound = true;
                                         System.out.println("For file " + received.handledID + " max packets " + received.maxPackets + " current packets " + received.packetsReceived);
