@@ -21,7 +21,8 @@ public class ReceivedFile{
     }
 
     public void addPacket(DataPacket dataPacket) {
-        files.put(dataPacket.packetNumber, dataPacket);
+        System.out.println("Adding data packet # " + dataPacket.packetNumber + " to file # " + handledID);
+        this.files.put(dataPacket.packetNumber, dataPacket);
     }
 
     public HeaderPacket getHeaderPacket() {
@@ -32,7 +33,7 @@ public class ReceivedFile{
         if(files.size() == 0) {
             return false;
         }
-        return maxPackets == files.size();
+        return this.maxPackets == this.files.size();
     }
 }
 
