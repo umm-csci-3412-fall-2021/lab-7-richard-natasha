@@ -6,7 +6,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 
@@ -14,45 +16,55 @@ public class FileRetriever {
 
         private static InetAddress serverName;
         private static int portNum;
+        private static FileOutputStream output;
         DatagramPacket packet;
         DatagramSocket socket = null;
+        DatagramSocket send = null;
         private static byte[] buf;
-        private DataPacket dataPacket;
         static byte[] lastPackNum;
         public List<ReceivedFile> allPackets = new ArrayList<>();
         HeaderPacket head;
         DataPacket data;
+        int numOfFullMaps = 0;
 
 
 	public FileRetriever(String server, int port) {
         // Save the server and port for use in `downloadFiles()`
         //...
-        try {
-               serverName = InetAddress.getByName(server); 
-        }catch(UnknownHostException e) {
-                System.out.println("Unknown host.");
-        }
+                try {
+                        serverName = InetAddress.getByName(server); 
+                }catch(UnknownHostException e) {
+                        System.out.println("Unknown host.");
+                }
                 portNum = port;
 	}
 
 	public void downloadFiles() {
 
                 try {
-                        socket = new DatagramSocket();
-                        socket.connect(serverName, portNum);
+                        send = new DatagramSocket();
+                        send.connect(serverName, portNum);
+                        socket = new DatagramSocket(portNum);
 
                         buf = new byte[1028];
-                        packet = new DatagramPacket(buf, buf.length, serverName, portNum);
-                        socket.send(packet);
+                        DatagramPacket request = new DatagramPacket(buf, buf.length, serverName, portNum);
+                        send.send(request);
                 } catch(SocketException e) {
                         System.out.println("There was a socket exception.");
                 } catch(IOException e) {
                         System.out.println("IOException error.");
                 }
 
-                while(!ReceivedFile.allPacketsReceived()) {
+                //runs as long as all of the maps arent full
+                do {
+                        //counts how many of the maps are full
+                        for(ReceivedFile received : allPackets) {
+                                if(received.allPacketsReceived()) numOfFullMaps++;
+                        }
+
                         try{ 
-                                socket.receive(packet);
+                                packet = new DatagramPacket(buf, buf.length, serverName, portNum);
+                                socket.send(packet);
                         } catch(IOException e){
                                 System.out.println("There was an unexpected error.");
                         }
@@ -67,8 +79,8 @@ public class FileRetriever {
                         }
 
                         for(ReceivedFile received : allPackets) {
-
-                                if(received.files.containsValue(packetType.fileID)) {
+                                System.out.println("hello");
+                                if(received.handledID == packetType.fileID) {
 
                                         if(isHead) {
                                                 received.addPacket(head);
@@ -82,17 +94,28 @@ public class FileRetriever {
                                                 newMap.addPacket(head);
                                         } else {
                                                 newMap.addPacket(data);
+
                                         }
                                         allPackets.add(newMap);
-
+                                        newMap.handledID = packetType.fileID;
                                 }
                                 received.packetsReceived++;
 
-                        if(dataPacket.isLastPacket()){
-                                lastPackNum = dataPacket.packetNum;
+                                if(!isHead && data.isLastPacket()){
+                                        received.maxPackets = data.packetNumber;
+                                }
                         }
-                        packet = new DatagramPacket(buf, buf.length);
-                }
+                        if(allPackets.size() == 0) {
+                                ReceivedFile newMap = new ReceivedFile();
+                                if(isHead) {
+                                        newMap.addPacket(head);
+                                } else {
+                                        newMap.addPacket(data);
+                                }
+                                allPackets.add(newMap);
+                                newMap.handledID = packetType.fileID;
+                        }
+                } while(numOfFullMaps != allPackets.size());
 
 
         // Do all the heavy lifting here.
@@ -109,5 +132,18 @@ public class FileRetriever {
         // ways.
 
 	}
+
+        public void writeToFiles() throws IOException, FileNotFoundException {
+                for(ReceivedFile received : allPackets) {
+                        //creates an output stream with the given file name
+                        output = new FileOutputStream(new File(received.getHeaderPacket().fileName));
+                        //goes through each packet and writes the data
+                        for(int i = 0; i < received.files.size(); i++) {
+                                Packet currentPacket = received.files.get(i);
+                                output.write(currentPacket.data);
+                        }
+                }
+                output.close();
+        }
 
 }
