@@ -21,7 +21,6 @@ public class ReceivedFile{
     }
 
     public void addPacket(DataPacket dataPacket) {
-        System.out.println("Adding data packet # " + dataPacket.packetNumber + " to file # " + handledID);
         this.files.put(dataPacket.packetNumber, dataPacket);
     }
 

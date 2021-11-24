@@ -85,7 +85,6 @@ public class FileRetriever {
                         } else {
                                 data = new DataPacket(packet);
                         }
-                        System.out.println("This is packet " + packetType.packetNumber + " for file " + packetType.fileID);
                         for(ReceivedFile received : allPackets) {
                                 if(received.handledID == packetType.fileID) {
 
@@ -101,7 +100,7 @@ public class FileRetriever {
                                         System.out.println("For file " + received.handledID + " max packets " + received.maxPackets + " current packets " + received.packetsReceived);
                                         received.packetsReceived++;
                                         System.out.println("current size : " + received.files.size());
-                                        if(!isHead && data.isLastPacket()){
+                                        if(data.isLastPacket() || packetType.statusByte == 3){
                                                 received.maxPackets = data.packetNumber;
                                         }
                                         break;
