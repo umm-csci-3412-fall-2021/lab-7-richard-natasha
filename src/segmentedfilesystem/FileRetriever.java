@@ -48,7 +48,6 @@ public class FileRetriever {
                         // socket = new DatagramSocket(portNum);
 
                         buf = new byte[1028];
-                        System.out.println("server name = " + serverName.getHostName() + " and port # = " + portNum);
                         DatagramPacket request = new DatagramPacket(buf, buf.length, serverName, portNum);
                         socket.send(request);
                 } catch(SocketException e) {
@@ -57,28 +56,22 @@ public class FileRetriever {
                         System.out.println("IOException error.");
                 }
 
-                System.out.println("Sent empty request packet.");
-
                 //runs as long as all of the maps arent full
-                do {
-                        System.out.println("At top of do-while loop");
+                do{
                         //counts how many of the maps are full
                         for(ReceivedFile received : allPackets) {
                                 if(received.allPacketsReceived()) numOfFullMaps++;
                         }
-                        System.out.println("Done checking for all packets received.");
 
                         try{ 
                                 packet = new DatagramPacket(buf, buf.length);
                                 socket.receive(packet);
-                                System.out.println("We received a packet!");
                         } catch(IOException e){
                                 System.out.println("There was an unexpected error.");
                         }
                         Packet packetType = new Packet(packet);
 
                         boolean isHead = packetType.isHeader();
-                        System.out.println("isHead " + isHead);
 
                         if(isHead) {
                                 head = new HeaderPacket(packet);
@@ -97,9 +90,7 @@ public class FileRetriever {
                                                 }
                                         }
                                         IDFound = true;
-                                        System.out.println("For file " + received.handledID + " max packets " + received.maxPackets + " current packets " + received.packetsReceived);
                                         received.packetsReceived++;
-                                        System.out.println("current size : " + received.files.size());
                                         if(data.isLastPacket() || packetType.statusByte == 3){
                                                 received.maxPackets = data.packetNumber;
                                         }
@@ -108,7 +99,6 @@ public class FileRetriever {
                                         IDFound = false;
                                 }
                         }
-                        System.out.println("is the ID found " + IDFound);
                         if(!IDFound) {
                                 newMap = new ReceivedFile();
                                 allPackets.add(newMap);
@@ -131,12 +121,7 @@ public class FileRetriever {
                                 allPackets.add(newMap);
                                 newMap.handledID = packetType.fileID;
                         }
-                        System.out.println("size of allPackets " + allPackets.size());
-                        System.out.println("number of full maps " + numOfFullMaps);
                 } while(numOfFullMaps != allPackets.size());
-
-                System.out.println("finished the loop");
-
 
         // Do all the heavy lifting here.
         // This should
